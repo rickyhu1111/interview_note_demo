@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -16,7 +17,10 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.interview_note_demo.databinding.FragmentCameraBinding
+import android.widget.ImageView
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -72,6 +76,11 @@ class CameraFragment : Fragment() {
         // Set up the switch camera button
         binding.switchCameraButton.setOnClickListener {
             toggleCamera()
+        }
+
+        // Set up the gallery button
+        binding.galleryButton.setOnClickListener {
+            openGallery()
         }
     }
 
@@ -156,6 +165,58 @@ class CameraFragment : Fragment() {
         requireContext(), Manifest.permission.CAMERA
     ) == PackageManager.PERMISSION_GRANTED
 
+    private fun openGallery() {
+        val photoDir = requireContext().externalMediaDirs.firstOrNull()
+        if (photoDir == null) {
+            Toast.makeText(requireContext(), "No external storage available", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val photoFiles = photoDir.listFiles { file ->
+            file.isFile && (file.extension == "jpg" || file.extension == "jpeg")
+        }?.sortedByDescending { it.lastModified() } ?: emptyList()
+
+        if (photoFiles.isEmpty()) {
+            Toast.makeText(requireContext(), "No photos taken yet", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Create a dialog to display photos
+        val dialogView = RecyclerView(requireContext()).apply {
+            layoutManager = GridLayoutManager(requireContext(), 3)
+            adapter = PhotoGalleryAdapter(photoFiles) { selectedFile ->
+                // Show selected photo in a larger view
+                showPhotoDetail(selectedFile)
+            }
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Photo Gallery")
+            .setView(dialogView)
+            .setNegativeButton("Close") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun showPhotoDetail(photoFile: File) {
+        val imageView = ImageView(requireContext()).apply {
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setImageURI(android.net.Uri.fromFile(photoFile))
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle(photoFile.name)
+            .setView(imageView)
+            .setPositiveButton("Delete") { _, _ ->
+                if (photoFile.delete()) {
+                    Toast.makeText(requireContext(), "Photo deleted", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "Failed to delete photo", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Close") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         cameraExecutor.shutdown()
@@ -166,4 +227,33 @@ class CameraFragment : Fragment() {
         private const val TAG = "CameraFragment"
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
     }
+}
+
+class PhotoGalleryAdapter(
+    private val photos: List<File>,
+    private val onPhotoClick: (File) -> Unit
+) : RecyclerView.Adapter<PhotoGalleryAdapter.PhotoViewHolder>() {
+
+    inner class PhotoViewHolder(private val imageView: ImageView) : RecyclerView.ViewHolder(imageView) {
+        fun bind(photoFile: File) {
+            imageView.setImageURI(android.net.Uri.fromFile(photoFile))
+            imageView.setOnClickListener {
+                onPhotoClick(photoFile)
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
+        val imageView = ImageView(parent.context).apply {
+            layoutParams = ViewGroup.LayoutParams(300, 300)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+        return PhotoViewHolder(imageView)
+    }
+
+    override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
+        holder.bind(photos[position])
+    }
+
+    override fun getItemCount(): Int = photos.size
 }
