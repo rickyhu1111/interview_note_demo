@@ -4,8 +4,8 @@
         android:id="@+id/scannerFragment"
         android:title="Scanner" />
     <item
-        android:id="@+id/historyFragment"
-        android:title="History" />
+        android:id="@+id/cameraFragment"
+        android:title="Camera" />
     <item
         android:id="@+id/settingsFragment"
         android:title="Settings" />

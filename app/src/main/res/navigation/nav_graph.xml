@@ -11,10 +11,10 @@
         android:label="Scanner"
         tools:layout="@layout/fragment_scanner" />
     <fragment
-        android:id="@+id/historyFragment"
-        android:name="com.example.interview_note_demo.HistoryFragment"
-        android:label="History"
-        tools:layout="@layout/fragment_history" />
+        android:id="@+id/cameraFragment"
+        android:name="com.example.interview_note_demo.CameraFragment"
+        android:label="Camera"
+        tools:layout="@layout/fragment_camera" />
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.example.interview_note_demo.SettingsFragment"
