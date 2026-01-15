@@ -7,6 +7,10 @@
         android:id="@+id/cameraFragment"
         android:title="Camera" />
     <item
+        android:id="@+id/mediaFragment"
+        android:title="Media" />
+    <item
         android:id="@+id/settingsFragment"
         android:title="Settings" />
 </menu>
+
